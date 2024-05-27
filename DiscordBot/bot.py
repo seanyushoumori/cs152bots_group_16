@@ -11,6 +11,7 @@ import pdb
 from modReport import ModReport, ModState
 from threePersonReport import ThreePersonReport
 from googleapiclient import discovery
+from openAiFunctions import OpenAIFunctions
 
 # Set up logging to the console
 logger = logging.getLogger('discord')
@@ -27,6 +28,7 @@ with open(token_path) as f:
     # If you get an error here, it means your token is formatted incorrectly. Did you put it in quotes?
     tokens = json.load(f)
     discord_token = tokens['discord']
+    openai_api_key = tokens['openai']
 
 
 class ModBot(discord.Client):
@@ -42,6 +44,7 @@ class ModBot(discord.Client):
         self.three_mod_reports = {} # Map from moderator IDs to the state of their 3 person mod report
         self.user_flag_counts = {} # Map from user IDs to the number of times they've been flagged
         self.three_person_review_team = None # The channel where the three person review team is located
+        self.open_ai_functions = OpenAIFunctions(openai_api_key)
 
     async def on_ready(self):
         print(f'{self.user.name} has connected to Discord! It is these guilds:')
@@ -182,8 +185,9 @@ class ModBot(discord.Client):
             scores = self.eval_text(message.content)
             identity_attack_score = scores['IDENTITY_ATTACK']
             if identity_attack_score > 0.5:
+                subcategory = self.open_ai_functions.detect_subcategory(message.content)
                 mod_channel = self.mod_channels[message.guild.id]
-                await self.send_report_to_mod_channel(message, identity_attack_score, mod_channel)
+                await self.send_report_to_mod_channel(message, subcategory, identity_attack_score, mod_channel)
         elif message.channel.name == f'group-{self.group_num}-mod':
             # This is a message from a moderator in the mod channel
             # Let the ModReport class handle this message
@@ -245,7 +249,6 @@ class ModBot(discord.Client):
             'SEVERE_TOXICITY': response['attributeScores']['SEVERE_TOXICITY']['summaryScore']['value'],
             'IDENTITY_ATTACK': response['attributeScores']['IDENTITY_ATTACK']['summaryScore']['value']
         }
-        print(scores)
         return scores
 
     
@@ -257,7 +260,7 @@ class ModBot(discord.Client):
         '''
         return "Evaluated: '" + text+ "'"
     
-    async def send_report_to_mod_channel(self, message, score, mod_channel):
+    async def send_report_to_mod_channel(self, message, subcategory, score, mod_channel):
         priority = "Low"
         if score > 0.7:
             priority = "Medium"
@@ -279,6 +282,7 @@ class ModBot(discord.Client):
         embed.add_field(name="Message Content", value=f"```{message.author.name}: {message.content}```", inline=False)
         embed.add_field(name="Priority", value=priority, inline=True)
         embed.add_field(name="Identity Attack Score", value=score, inline=True)
+        embed.add_field(name="Subcategory:", value=subcategory, inline=False)
 
         await mod_channel.send(embed=embed)
 
