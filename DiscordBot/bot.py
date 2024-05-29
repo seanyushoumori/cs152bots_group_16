@@ -9,6 +9,7 @@ import requests
 from report import Report, State
 import pdb
 from modReport import ModReport, ModState
+from keywords import Keywords
 from threePersonReport import ThreePersonReport
 from googleapiclient import discovery
 from openAiFunctions import OpenAIFunctions
@@ -48,6 +49,7 @@ class ModBot(discord.Client):
         self.user_flag_counts = {} # Map from user IDs to the number of times they've been flagged
         self.three_person_review_team = None # The channel where the three person review team is located
         self.open_ai_functions = OpenAIFunctions(openai_api_key)
+        self.keyword_reports = {} # Map from user IDs to the state of their keyword report
         
         # setup firestore
         cred = credentials.Certificate('cs152-a1114-firebase-adminsdk-4hhtt-692136946d.json')
@@ -129,31 +131,36 @@ class ModBot(discord.Client):
 
         
         # If reaction is made to a private DM for a user that's currently in reporting flow
-        if not payload.guild_id and payload.user_id in self.reports:
-            # Let user report class handle the reaction
-            await self.reports[payload.user_id].handle_reaction(payload, message)
+        if not payload.guild_id and (payload.user_id in self.reports or payload.user_id in self.keyword_reports):
+            if payload.user_id in self.keyword_reports:
+                await self.keyword_reports[payload.user_id].handle_reaction(payload, message)
+                if self.keyword_reports[payload.user_id].keywords_done():
+                    self.keyword_reports.pop(payload.user_id)
+            else:
+                # Let user report class handle the reaction
+                await self.reports[payload.user_id].handle_reaction(payload, message)
 
-            # If the report is complete, forward to mod channel and remove it from our map
-            if self.reports[payload.user_id].report_complete():
-                # update the count of times the user has been flagged
-                flagged_user_id = self.reports[payload.user_id].message.author.id
+                # If the report is complete, forward to mod channel and remove it from our map
+                if self.reports[payload.user_id].report_complete():
+                    # update the count of times the user has been flagged
+                    flagged_user_id = self.reports[payload.user_id].message.author.id
 
-                # increment the flag count in firestore
-                self.increment_flag_count(flagged_user_id)
+                    # increment the flag count in firestore
+                    self.increment_flag_count(flagged_user_id)
 
-                # increment the flag count in memory for debugging
-                if flagged_user_id in self.user_flag_counts:
-                    self.user_flag_counts[flagged_user_id] += 1
-                else:
-                    self.user_flag_counts[flagged_user_id] = 1
+                    # increment the flag count in memory for debugging
+                    if flagged_user_id in self.user_flag_counts:
+                        self.user_flag_counts[flagged_user_id] += 1
+                    else:
+                        self.user_flag_counts[flagged_user_id] = 1
 
-                mod_channel = self.mod_channels[self.reports[payload.user_id].message.guild.id]
-                await self.reports[payload.user_id].send_report_to_mod_channel(mod_channel)
-                self.reports.pop(payload.user_id)
+                    mod_channel = self.mod_channels[self.reports[payload.user_id].message.guild.id]
+                    await self.reports[payload.user_id].send_report_to_mod_channel(mod_channel)
+                    self.reports.pop(payload.user_id)
 
-            # If the report is cancelled, just remove it from the map
-            elif self.reports[payload.user_id].report_cancelled():
-                self.reports.pop(payload.user_id)
+                # If the report is cancelled, just remove it from the map
+                elif self.reports[payload.user_id].report_cancelled():
+                    self.reports.pop(payload.user_id)
         # elif message.channel.name == f'group-{self.group_num}-mod':
         elif not payload.guild_id and payload.user_id in self.mod_reports:
             await self.mod_reports[payload.user_id].handle_reaction(payload, message)
@@ -176,31 +183,45 @@ class ModBot(discord.Client):
         if message.content == Report.HELP_KEYWORD:
             reply =  "Use the `report` command to begin the reporting process.\n"
             reply += "Use the `cancel` command to cancel the report process.\n"
+            reply += "Use the `keywords` command to edit keywords or regular expressions that will trigger a report.\n"
             await message.channel.send(reply)
             return
 
         author_id = message.author.id
         responses = []
 
+        if author_id in self.keyword_reports:
+            await self.keyword_reports[author_id].handle_message(message)
+            if self.keyword_reports[author_id].keywords_done():
+                self.keyword_reports.pop(author_id)
+
         # Only respond to messages if they're part of a reporting flow
-        if author_id not in self.reports and not message.content.startswith(Report.START_KEYWORD):
+        if author_id not in self.reports and not (message.content.startswith(Report.START_KEYWORD) or message.content.startswith(Keywords.START_KEYWORD)):
             return
 
-        # If we don't currently have an active report for this user, add one
-        if author_id not in self.reports:
-            self.reports[author_id] = Report(self, message.author)
+        if message.content.startswith(Keywords.START_KEYWORD):
+            if author_id not in self.keyword_reports:
+                self.keyword_reports[author_id] = Keywords(self, message.author, self.db)
 
-        # Let the report class handle this message
-        await self.reports[author_id].handle_message(message)
+            await self.keyword_reports[author_id].handle_message(message)
+            if self.keyword_reports[author_id].keywords_done():
+                self.keyword_reports.pop(author_id)
+        else:
+            # If we don't currently have an active report for this user, add one
+            if author_id not in self.reports:
+                self.reports[author_id] = Report(self, message.author)
 
-        # If the report is complete or cancelled, remove it from our map
-        if self.reports[author_id].report_complete():
-            mod_channel = self.mod_channels[self.reports[author_id].message.guild.id]
-            await self.reports[author_id].send_report_to_mod_channel(mod_channel)
-            self.reports.pop(author_id)
-        # If the report is cancelled, just remove it from the map
-        elif self.reports[author_id].report_cancelled():
-            self.reports.pop(author_id)
+            # Let the report class handle this message
+            await self.reports[author_id].handle_message(message)
+
+            # If the report is complete or cancelled, remove it from our map
+            if self.reports[author_id].report_complete():
+                mod_channel = self.mod_channels[self.reports[author_id].message.guild.id]
+                await self.reports[author_id].send_report_to_mod_channel(mod_channel)
+                self.reports.pop(author_id)
+            # If the report is cancelled, just remove it from the map
+            elif self.reports[author_id].report_cancelled():
+                self.reports.pop(author_id)
         
         return
 
