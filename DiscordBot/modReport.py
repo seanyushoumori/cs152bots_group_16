@@ -31,7 +31,7 @@ class ModState(Enum):
 class ModReport:
     START_KEYWORD = "mod"
 
-    def __init__(self, client, three_person_team_channel, user_flag_counts):
+    def __init__(self, client, three_person_team_channel, user_flag_counts, db):
         self.state = ModState.REPORT_START
         self.client = client
         self.flagged_message = None
@@ -41,6 +41,7 @@ class ModReport:
         self.dm_channel = None
         self.three_person_team_channel = three_person_team_channel
         self.user_flag_counts = user_flag_counts
+        self.db = db
     
     async def handle_message(self, message):
         '''
@@ -399,9 +400,14 @@ class ModReport:
         
     async def handle_harassment_take_action_reaction(self):
         # based on how many times the user has been flagged, choose an option
+        users_ref = self.db.collection("users")
+        user_ref = users_ref.document(str(self.flagged_message.author.id))
+        user_doc = user_ref.get()
+        # Check if the document exists
         flag_counts = 0
-        if self.flagged_message.author.id in self.user_flag_counts:
-            flag_counts = self.user_flag_counts[self.flagged_message.author.id]
+        if user_doc.exists:
+            flag_counts = user_doc.to_dict().get('flag_counts', 0)
+
         await self.send_follow_up_question(
                 f"The user {self.flagged_message.author.name} has been previously flagged {flag_counts} times. Choose an option for action\n"
                 "1️⃣ - Less than 5 times -> Remove post\n"

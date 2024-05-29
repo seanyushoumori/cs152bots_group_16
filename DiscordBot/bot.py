@@ -12,6 +12,9 @@ from modReport import ModReport, ModState
 from threePersonReport import ThreePersonReport
 from googleapiclient import discovery
 from openAiFunctions import OpenAIFunctions
+import firebase_admin
+from firebase_admin import firestore
+from firebase_admin import credentials
 
 # Set up logging to the console
 logger = logging.getLogger('discord')
@@ -45,6 +48,23 @@ class ModBot(discord.Client):
         self.user_flag_counts = {} # Map from user IDs to the number of times they've been flagged
         self.three_person_review_team = None # The channel where the three person review team is located
         self.open_ai_functions = OpenAIFunctions(openai_api_key)
+        
+        # setup firestore
+        cred = credentials.Certificate('cs152-a1114-firebase-adminsdk-4hhtt-692136946d.json')
+        app = firebase_admin.initialize_app(cred)
+        self.db = firestore.client()
+
+    def increment_flag_count(self, user_id):
+        # Reference to the user document
+        user_ref = self.db.collection('users').document(str(user_id))
+        user_doc = user_ref.get()
+        
+        # Check if the document exists
+        if user_doc.exists:
+            user_ref.update({'flag_counts': firestore.Increment(1)})
+        else:
+            user_ref.set({'flag_counts': 1})
+
 
     async def on_ready(self):
         print(f'{self.user.name} has connected to Discord! It is these guilds:')
@@ -117,6 +137,11 @@ class ModBot(discord.Client):
             if self.reports[payload.user_id].report_complete():
                 # update the count of times the user has been flagged
                 flagged_user_id = self.reports[payload.user_id].message.author.id
+
+                # increment the flag count in firestore
+                self.increment_flag_count(flagged_user_id)
+
+                # increment the flag count in memory for debugging
                 if flagged_user_id in self.user_flag_counts:
                     self.user_flag_counts[flagged_user_id] += 1
                 else:
@@ -194,7 +219,7 @@ class ModBot(discord.Client):
             # If we don't currently have an active report for this user, add one
             author_id = message.author.id
             if author_id not in self.mod_reports:
-                self.mod_reports[author_id] = ModReport(self, self.three_person_review_team, self.user_flag_counts)
+                self.mod_reports[author_id] = ModReport(self, self.three_person_review_team, self.user_flag_counts, self.db)
 
             # Let the report class handle this message
             await self.mod_reports[author_id].handle_message(message)
