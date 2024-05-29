@@ -228,6 +228,18 @@ class ModBot(discord.Client):
     async def handle_channel_message(self, message):
         # If in group-16 channel, evaluate the message and forward to mod channel if above threshold
         if message.channel.name == f'group-{self.group_num}':
+            # first check if there are any keywords that should raise a flag. If so, flag it to mod channel. If not, check for identity attack with perspective API
+            keywords_ref = self.db.collection('config').document('keywords')
+            keywords_doc = keywords_ref.get()
+            keywords_list = []
+            if keywords_doc.exists:
+                keywords_list = keywords_doc.to_dict().get('keywords_list', [])
+
+            for keyword in keywords_list:
+                if keyword.lower() in message.content.lower():
+                    await self.send_report_to_mod_channel(message, "Manual Keyword", 1, self.mod_channels[message.guild.id])
+                    return
+
             scores = self.eval_text(message.content)
             identity_attack_score = scores['IDENTITY_ATTACK']
             if identity_attack_score > 0.5:
