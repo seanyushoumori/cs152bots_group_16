@@ -41,6 +41,7 @@ class Report:
         self.priority_level = PriorityLevel.LOW
         self.other_explanation = None
         self.final_state = None
+        self.reactions = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣']
     
     async def handle_message(self, message):
         '''
@@ -94,6 +95,9 @@ class Report:
                 "3️⃣ - Urgent Violence\n"
                 "4️⃣ - Others/I don't like this")
             self.abuse_category_message_id = sent_message.id
+            for reaction in self.reactions[:4]:
+                await sent_message.add_reaction(reaction)
+
             return
         
         if self.state == State.OTHERS_CHOSEN:
@@ -108,6 +112,9 @@ class Report:
                 "Otherwise, react to this message with 👎."
             )
             self.block_user_message_id = sent_message.id
+
+            for reaction in ['👍', '👎']:
+                await sent_message.add_reaction(reaction)
             return
         
         return
@@ -128,6 +135,8 @@ class Report:
                     "4️⃣ - Doxing\n"
                     "5️⃣ - Unwanted Sexual Content\n")
                 self.harassment_type_message_id = sent_message.id
+                for reaction in self.reactions:
+                    await sent_message.add_reaction(reaction)
                 return
             elif str(payload.emoji) == '2️⃣':
                 self.state = State.OFFENSIVE_CONTENT_CHOSEN
@@ -139,6 +148,8 @@ class Report:
                     "4️⃣ - Drug Use\n"
                     "5️⃣ - Inciting/Glorifying  Violence\n")
                 self.offensive_content_type_message_id = sent_message.id
+                for reaction in self.reactions:
+                    await sent_message.add_reaction(reaction)
                 return
             elif str(payload.emoji) == '3️⃣':
                 self.state = State.URGENT_VIOLENCE_CHOSEN
@@ -148,6 +159,8 @@ class Report:
                     "Otherwise, react to this message with 👎."
                 )
                 self.immediate_danger_message_id = sent_message.id
+                for reaction in ['👍', '👎']:
+                    await sent_message.add_reaction(reaction)
                 return
             elif str(payload.emoji) == '4️⃣':
                 self.state = State.OTHERS_CHOSEN
@@ -171,6 +184,8 @@ class Report:
                     "Otherwise, react to this message with 👎."
                 )
                 self.block_user_message_id = sent_message.id
+                for reaction in ['👍', '👎']:
+                    await sent_message.add_reaction(reaction)
                 return
             elif str(payload.emoji) == '2️⃣': # Impersonation
                 self.state = State.BLOCK_USER
@@ -181,6 +196,8 @@ class Report:
                     "Otherwise, react to this message with 👎."
                 )
                 self.block_user_message_id = sent_message.id
+                for reaction in ['👍', '👎']:
+                    await sent_message.add_reaction(reaction)
                 return
             elif str(payload.emoji) == '3️⃣': # Directed Hate Speech
                 self.state = State.BLOCK_USER
@@ -192,6 +209,8 @@ class Report:
                     "Otherwise, react to this message with 👎."
                 )
                 self.block_user_message_id = sent_message.id
+                for reaction in ['👍', '👎']:
+                    await sent_message.add_reaction(reaction)
                 return
             elif str(payload.emoji) == '4️⃣': # Doxing
                 self.state = State.BLOCK_USER
@@ -202,6 +221,8 @@ class Report:
                     "Otherwise, react to this message with 👎."
                 )
                 self.block_user_message_id = sent_message.id
+                for reaction in ['👍', '👎']:
+                    await sent_message.add_reaction(reaction)
                 return
             elif str(payload.emoji) == '5️⃣': # Unwanted Sexual Content
                 self.state = State.BLOCK_USER
@@ -213,6 +234,8 @@ class Report:
                     "Otherwise, react to this message with 👎."
                 )
                 self.block_user_message_id = sent_message.id
+                for reaction in ['👍', '👎']:
+                    await sent_message.add_reaction(reaction)
                 return
             
             await message.channel.send("Sorry, I don't understand what you mean by this emoji. Please react to the previous message with either 1️⃣, 2️⃣, 3️⃣, 4️⃣ or 5️⃣")
@@ -233,6 +256,8 @@ class Report:
                     "Otherwise, react to this message with 👎."
                 )
                 self.block_user_message_id = sent_message.id
+                for reaction in ['👍', '👎']:
+                    await sent_message.add_reaction(reaction)
                 return
             elif str(payload.emoji) == '2️⃣': # Sexually Graphic Content
                 self.state = State.BLOCK_USER
@@ -244,6 +269,8 @@ class Report:
                     "Otherwise, react to this message with 👎."
                 )
                 self.block_user_message_id = sent_message.id
+                for reaction in ['👍', '👎']:
+                    await sent_message.add_reaction(reaction)
                 return
             elif str(payload.emoji) == '3️⃣': # Child Sexual Abuse Material
                 self.state = State.BLOCK_USER
@@ -255,6 +282,8 @@ class Report:
                     "Otherwise, react to this message with 👎."
                 )
                 self.block_user_message_id = sent_message.id
+                for reaction in ['👍', '👎']:
+                    await sent_message.add_reaction(reaction)
                 return
             elif str(payload.emoji) == '4️⃣': # Drug Use
                 self.state = State.BLOCK_USER
@@ -265,6 +294,8 @@ class Report:
                     "Otherwise, react to this message with 👎."
                 )
                 self.block_user_message_id = sent_message.id
+                for reaction in ['👍', '👎']:
+                    await sent_message.add_reaction(reaction)
                 return
             elif str(payload.emoji) == '5️⃣': # Inciting/Glorifying Violence
                 self.state = State.INCITING_VIOLENCE_CHOSEN
@@ -277,6 +308,8 @@ class Report:
                     "5️⃣ - Other\n"
                 )
                 self.inciting_violence_message_id = sent_message.id
+                for reaction in self.reactions:
+                    await sent_message.add_reaction(reaction)
                 return
             
             await message.channel.send("Sorry, I don't understand what you mean by this emoji. Please react to the previous message with either 1️⃣, 2️⃣, 3️⃣, 4️⃣ or 5️⃣")
@@ -297,6 +330,8 @@ class Report:
                     "Otherwise, react to this message with 👎."
                 )
                 self.block_user_message_id = sent_message.id
+                for reaction in ['👍', '👎']:
+                    await sent_message.add_reaction(reaction)
                 return
             elif str(payload.emoji) == '2️⃣': # Terrorism
                 self.state = State.BLOCK_USER
@@ -308,6 +343,8 @@ class Report:
                     "Otherwise, react to this message with 👎."
                 )
                 self.block_user_message_id = sent_message.id
+                for reaction in ['👍', '👎']:
+                    await sent_message.add_reaction(reaction)
                 return
             elif str(payload.emoji) == '3️⃣': # Animal Abuse
                 self.state = State.BLOCK_USER
@@ -319,6 +356,8 @@ class Report:
                     "Otherwise, react to this message with 👎."
                 )
                 self.block_user_message_id = sent_message.id
+                for reaction in ['👍', '👎']:
+                    await sent_message.add_reaction(reaction)
                 return
             elif str(payload.emoji) == '4️⃣': # Depiction of Physical Violence
                 self.state = State.BLOCK_USER
@@ -329,6 +368,8 @@ class Report:
                     "Otherwise, react to this message with 👎."
                 )
                 self.block_user_message_id = sent_message.id
+                for reaction in ['👍', '👎']:
+                    await sent_message.add_reaction(reaction)
                 return
             elif str(payload.emoji) == '5️⃣': # Other
                 self.state = State.BLOCK_USER
@@ -339,6 +380,8 @@ class Report:
                     "Otherwise, react to this message with 👎."
                 )
                 self.block_user_message_id = sent_message.id
+                for reaction in ['👍', '👎']:
+                    await sent_message.add_reaction(reaction)
                 return
             
             await message.channel.send("Sorry, I don't understand what you mean by this emoji. Please react to the previous message with either 1️⃣, 2️⃣, 3️⃣, 4️⃣ or 5️⃣")
@@ -388,6 +431,8 @@ class Report:
                     "Otherwise, react to this message with 👎."
                 )
                 self.block_user_message_id = sent_message.id
+                for reaction in ['👍', '👎']:
+                    await sent_message.add_reaction(reaction)
                 return
             
             await message.channel.send("Sorry, I don't understand what you mean by this emoji. Please react to the previous message with either 1️⃣ or 2️⃣")

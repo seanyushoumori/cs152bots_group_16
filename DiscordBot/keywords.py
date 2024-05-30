@@ -24,6 +24,7 @@ class Keywords:
         self.message = None
         self.final_state = None
         self.db = db
+        self.reactions = ['1️⃣', '2️⃣', '3️⃣', '4️⃣']
     
     async def handle_message(self, message):
         '''
@@ -49,6 +50,12 @@ class Keywords:
             self.state = KeywordState.AWAITING_KEYWORDS
             sent_message = await message.channel.send(reply)
             self.abuse_category_message_id = sent_message.id
+
+            # preadd the reactions so it's easy for the user to click
+            
+            for reaction in self.reactions:
+                await sent_message.add_reaction(reaction)
+
             return
         
         if self.state == KeywordState.ADD_KEYWORD:
@@ -113,7 +120,7 @@ class Keywords:
                 sentMessage = None
                 if keywords_doc.exists:
                     keywords_list = keywords_doc.to_dict().get('keywords_list', [])
-                    sent_message = await message.channel.send("Here are the current keywords: \n" + "\n".join(keywords_list))
+                    sent_message = await message.channel.send("Here are the current keywords: ```\n" + "\n".join(keywords_list) + "\n```")
                 else:
                     sent_message = await message.channel.send("There are no keywords currently.")
 

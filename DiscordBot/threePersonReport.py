@@ -77,6 +77,8 @@ class ThreePersonReport:
                 "7️⃣ - Cancel")
             self.abuse_category_message_id = sent_message.id
             self.follow_up_message_id = sent_message.id
+            for reaction in ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣']:
+                await sent_message.add_reaction(reaction)
             return
     
     async def handle_reaction(self, payload, message):

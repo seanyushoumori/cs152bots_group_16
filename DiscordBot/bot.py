@@ -128,6 +128,11 @@ class ModBot(discord.Client):
         # Only listen for reactions to messages made by the bot
         if message.author.id != self.user.id:
             return
+        
+        if payload.user_id == self.user.id:
+            # ignore reactions premade by the bot
+            # print('reaction by bot, ignoring!')
+            return
 
         
         # If reaction is made to a private DM for a user that's currently in reporting flow

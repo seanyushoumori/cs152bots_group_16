@@ -42,6 +42,7 @@ class ModReport:
         self.three_person_team_channel = three_person_team_channel
         self.user_flag_counts = user_flag_counts
         self.db = db
+        self.reactions = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣']
     
     async def handle_message(self, message):
         '''
@@ -102,6 +103,8 @@ class ModReport:
                 "5️⃣ - Cancel manual report")
             self.abuse_category_message_id = sent_message.id
             self.follow_up_message_id = sent_message.id
+            for reaction in self.reactions:
+                await sent_message.add_reaction(reaction)
             return
     
     async def handle_reaction(self, payload, message):
@@ -386,7 +389,9 @@ class ModReport:
                 "Does this fit with the other categories (Harassment, Offensive Content, Urgent Violence)? React for yes or no.\n"
                 "1️⃣ - Yes -> Choose appropriate category\n"
                 "2️⃣ - No -> Forward to review team\n"
-                "3️⃣ - Cancel")
+                "3️⃣ - Cancel",
+                3
+            )
         
     # HARASSMENT FLOW --------------------------------------------------------------
 
@@ -396,7 +401,9 @@ class ModReport:
                 "Does the harassment fit under trolling, impersonation, direct hate speech, doxing, or unwanted sexual content?\n"
                 "1️⃣ - Yes -> May remove post, suspend, or ban user\n"
                 "2️⃣ - No -> No action\n"
-                "3️⃣ - Cancel")
+                "3️⃣ - Cancel",
+                3
+            )
         
     async def handle_harassment_take_action_reaction(self):
         # based on how many times the user has been flagged, choose an option
@@ -413,7 +420,9 @@ class ModReport:
                 "1️⃣ - Less than 5 times -> Remove post\n"
                 "2️⃣ - Greater than 5 times -> Suspend user\n"
                 "3️⃣ - Greater than 10 times -> Ban user\n"
-                "4️⃣ - Cancel")
+                "4️⃣ - Cancel",
+                4
+            )
 
     # OFFENSIVE CONTENT FLOW --------------------------------------------------------------
     async def handle_offensive_content_reaction(self):
@@ -423,14 +432,18 @@ class ModReport:
                 "Please react with the corresponding number to deal with offensive content:\n"
                 "1️⃣ - Sexually graphic content, CSAM, protected characteristics, or drug use -> Remove post\n"
                 "2️⃣ - Inciting Violence -> Escalate to outside services, or remove post\n"
-                "3️⃣ - Cancel\n")
+                "3️⃣ - Cancel\n",
+                3
+            )
         
     async def handle_offensive_content_not_inciting_violence_reaction(self):
         # Ask to remove post for offensive content that is not inciting violence
         await self.send_follow_up_question(
                 "Please react with a corresponding number to confirm action:\n"
                 "1️⃣ - Remove Post\n"
-                "2️⃣ - Cancel")
+                "2️⃣ - Cancel",
+                2
+            )
 
     async def handle_offensive_content_inciting_violence_reaction(self):
         # Handle offensive content that is inciting violence
@@ -440,28 +453,36 @@ class ModReport:
                 "2️⃣ - Terrorism -> Escalate to law enforcement\n"
                 "3️⃣ - Animal Abuse -> Escalate to animal protective services\n"
                 "4️⃣ - Other\n"
-                "5️⃣ - Cancel")
+                "5️⃣ - Cancel",
+                5
+            )
         
     async def handle_dangerous_depiction_violence_reaction(self):
         # Ask to remove post for offensive content that is a dangerous act or depiction of physical violence
         await self.send_follow_up_question(
                 "Please react with a corresponding number to confirm action:\n"
                 "1️⃣ - Remove Post\n"
-                "2️⃣ - Cancel")
+                "2️⃣ - Cancel",
+                2
+            )
         
     async def handle_offensive_terrorism_reaction(self):
         # Ask to remove post, ban user, and notify law enforcement
         await self.send_follow_up_question(
                 "Please react with a corresponding number to confirm action:\n"
                 "1️⃣ - Remove post, ban user, and report case to law enforcement\n"
-                "2️⃣ - Cancel")
+                "2️⃣ - Cancel",
+                2
+            )
         
     async def handle_offensive_animal_abuse_reaction(self):
         # ask to remove post and notify law enforcement
         await self.send_follow_up_question(
                 "Please react with a corresponding number to confirm action:\n"
                 "1️⃣ - Remove post and report case to animal protective services\n"
-                "2️⃣ - Cancel")
+                "2️⃣ - Cancel",
+                2
+            )
         
     async def handle_offensive_violence_other_reaction(self):
         # ask if fits with other categories
@@ -469,7 +490,9 @@ class ModReport:
                 "Does this fit with the other categories of inciting violence? React for yes or no.\n"
                 "1️⃣ - Yes -> Choose appropriate category\n"
                 "2️⃣ - No -> Forward to review team\n"
-                "3️⃣ - Cancel")
+                "3️⃣ - Cancel",
+                3
+            )
         
     # URGENT VIOLENCE FLOW --------------------------------------------------------------
     
@@ -479,7 +502,9 @@ class ModReport:
                 "Please react with a corresponding number to categorize the urgent violence.\n"
                 "1️⃣ - Self Harm -> May remove post or send mental health resources\n"
                 "2️⃣ - Direct Threat on Another User -> May escalate to ban, suspension, content removal, or law enforcement\n"
-                "3️⃣ - Cancel")
+                "3️⃣ - Cancel",
+                3
+            )
     
     async def handle_urgent_self_harm_reaction(self):
         # Ask to remove post or send mental health resources if the enough veracity
@@ -487,7 +512,9 @@ class ModReport:
                 "Please determine the veracity of the post and react for one of the options:\n"
                 "1️⃣ - Real issue -> Send mental health resources to user\n"
                 "2️⃣ - No real issue -> Remove post\n"
-                "3️⃣ - Cancel")
+                "3️⃣ - Cancel",
+                3
+            )
         
     async def handle_urgent_direct_threat_reaction(self):
         # Ask to remove post or send mental health resources if the enough veracity
@@ -495,16 +522,20 @@ class ModReport:
                 "Please determine the authenticity of the post and react for one of the options:\n"
                 "1️⃣ - False Report -> No Action\n"
                 "2️⃣ - Credible Threat -> Remove post, ban user, and report to law enforcement\n"
-                "3️⃣ - Cancel")
+                "3️⃣ - Cancel",
+                3
+            )
         
     
     # Helper functions ----------------------------------------------------------
     
-    async def send_follow_up_question(self, question):
+    async def send_follow_up_question(self, question, num_reactions):
         # Send a follow-up question and update the state
         # sent_message = await self.flagged_message.channel.send(question)
         sent_message = await self.dm_channel.send(question)
         self.follow_up_message_id = sent_message.id
+        for reaction in self.reactions[:num_reactions]:
+            await sent_message.add_reaction(reaction)
         # self.state = ModState.FOLLOW_UP_QUESTION_AWAITING_ANSWER
 
     def report_complete(self):
