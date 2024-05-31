@@ -91,6 +91,8 @@ class ModReport:
             )
 
             self.dm_channel = await message.author.create_dm()
+            self.dm_message_author_channel = await self.flagged_message.author.create_dm()
+            print('self.dm_message author channel:', self.dm_message_author_channel)
 
             sent_message = await self.dm_channel.send(
                 f"I found this message:\n"
@@ -182,17 +184,20 @@ class ModReport:
             elif reaction == '2️⃣':
                 user = self.flagged_message.author.name
                 # suspend user
-                await self.flagged_message.channel.send(f"User {user} has been suspended for 3 days.")
+                # await self.flagged_message.channel.send(f"User {user} has been suspended for 3 days.")
+                await self.dm_message_author_channel.send(f"You have been suspended for 3 days for the following message, and it has been removed from our platform. Please review the community guidelines.\n```{self.flagged_message.content}```")
                 # remove post
                 await self.dm_channel.send("Removing post...")
                 await self.flagged_message.delete()
 
                 await self.dm_channel.send(f"Suspended user {user} for 3 days and removed post. This moderation process is complete.")
+                
                 self.state = ModState.REPORT_COMPLETE
             elif reaction == '3️⃣':
                 user = self.flagged_message.author.name
                 # ban user
-                await self.flagged_message.channel.send(f"User {user} has been banned.")
+                # await self.flagged_message.channel.send(f"User {user} has been banned.")
+                await self.dm_message_author_channel.send(f"You have been banned for the following message, and it has been removed from our platform. Please review the community guidelines.\n```{self.flagged_message.content}```")
                 # remove post
                 await self.dm_channel.send("Removing post...")
                 await self.flagged_message.delete()
@@ -266,7 +271,8 @@ class ModReport:
         elif self.state == ModState.OFFENSIVE_TERRORISM:
             if reaction == '1️⃣':
                 # ban user
-                await self.flagged_message.channel.send(f"User {self.flagged_message.author.name} has been banned.")
+                # await self.flagged_message.channel.send(f"User {self.flagged_message.author.name} has been banned.")
+                await self.dm_message_author_channel.send(f"You have been banned for the following message, and it has been removed from our platform. Please review the community guidelines.\n```{self.flagged_message.content}```")
                 
                 # removing post
                 await self.flagged_message.delete()
@@ -362,7 +368,8 @@ class ModReport:
                 self.state = ModState.REPORT_COMPLETE
             elif reaction == '2️⃣':
                 # ban user
-                await self.flagged_message.channel.send(f"User {self.flagged_message.author.name} has been banned.")
+                # await self.flagged_message.channel.send(f"User {self.flagged_message.author.name} has been banned.")
+                await self.dm_message_author_channel.send(f"You have been banned for the following message, and it has been removed from our platform. Please review the community guidelines.\n```{self.flagged_message.content}```")
 
                 # removing post
                 await self.flagged_message.delete()
