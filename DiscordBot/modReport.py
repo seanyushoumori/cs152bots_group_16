@@ -167,6 +167,7 @@ class ModReport:
                 
                 action_message = ""
                 if flag_counts < 5:
+                    await self.dm_message_author_channel.send(f"Your message below has been removed because it does not comply with our community guidelines. Please review the guidelines.\n```{self.flagged_message.content}```")
                     action_message = "Removed post. This moderation process is complete."
                 elif 5 <= flag_counts < 10:
                     await self.dm_message_author_channel.send(f"You have been suspended for 3 days for the following message, and it has been removed from our platform. Please review the community guidelines.\n```{self.flagged_message.content}```")
@@ -211,7 +212,7 @@ class ModReport:
             if reaction == '1️⃣':
                 # remove post
                 await self.dm_channel.send("Removing post...")
-                # remove post
+                await self.dm_message_author_channel.send(f"Your message below has been removed because it does not comply with our community guidelines. Please review the guidelines.\n```{self.flagged_message.content}```")
                 await self.flagged_message.delete()
                 await self.dm_channel.send("This post has been removed and the moderation process is complete.")
                 self.state = ModState.REPORT_COMPLETE
@@ -250,10 +251,9 @@ class ModReport:
         elif self.state == ModState.OFFENSIVE_TERRORISM:
             if reaction == '1️⃣':
                 # ban user
-                # await self.flagged_message.channel.send(f"User {self.flagged_message.author.name} has been banned.")
                 await self.dm_message_author_channel.send(f"You have been banned for the following message, and it has been removed from our platform. Please review the community guidelines.\n```{self.flagged_message.content}```")
-                
                 # removing post
+                await self.dm_channel.send("Removing post...")
                 await self.flagged_message.delete()
 
                 # notify law enforcement
@@ -270,6 +270,8 @@ class ModReport:
         elif self.state == ModState.OFFENSIVE_ANIMAL_ABUSE:
             if reaction == '1️⃣':
                 # removing post
+                await self.dm_message_author_channel.send(f"Your message below has been removed because it does not comply with our community guidelines. Please review the guidelines.\n```{self.flagged_message.content}```")
+                await self.dm_channel.send("Removing post...")
                 await self.flagged_message.delete()
                 # notify APS
                 # basically do nothing... just a simulation
@@ -322,13 +324,16 @@ class ModReport:
         elif self.state == ModState.URGENT_SELF_HARM:
             if reaction == '1️⃣':
                 # send resources to user
-                await self.flagged_message.author.send("We have seen your message and are here to help. Here are some mental health resources: [link]")
+                await self.flagged_message.author.send(f"We have seen your message below and are here to help. Here are some mental health resources: [link]. The message has also been removed from our platform to help keep our community safe.\n```{self.flagged_message.content}```")
                 # remove post
+                await self.dm_channel.send("Removing post...")
                 await self.flagged_message.delete()
                 await self.dm_channel.send("Removed post and sent mental health resources to user. The moderation process is complete.")
                 self.state = ModState.REPORT_COMPLETE
             elif reaction == '2️⃣':
                 # removing post
+                await self.dm_message_author_channel.send(f"Your message below has been removed because it does not comply with our community guidelines. Please review the guidelines.\n```{self.flagged_message.content}```")
+                await self.dm_channel.send("Removing post...")
                 await self.flagged_message.delete()
                 await self.dm_channel.send("Removed post. The moderation process is complete.")
                 self.state = ModState.REPORT_COMPLETE
@@ -377,8 +382,8 @@ class ModReport:
                 # ban user
                 await self.dm_message_author_channel.send(f"You have been banned for the following message, and it has been removed from our platform. Please review the community guidelines.\n```{self.flagged_message.content}```")
 
-                await self.dm_channel.send("Removing post...")
                 # removing post
+                await self.dm_channel.send("Removing post...")
                 await self.flagged_message.delete()
 
                 # notify law enforcement
