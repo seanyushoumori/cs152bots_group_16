@@ -53,11 +53,9 @@ class ModReport:
             await message.channel.send("Please paste the link to the message you want to review.")
             self.state = ModState.AWAITING_MESSAGE
             self.mod_channel = message.channel
-            # print('awaiting message')
             return
 
         if self.state == ModState.AWAITING_MESSAGE:
-            # print('awaiting message')
             # Parse out the three ID strings from the message link
             self.linked_message = message
             m = re.search('/(\d+)/(\d+)/(\d+)', message.content)
@@ -78,12 +76,6 @@ class ModReport:
                 await message.channel.send("It seems this message was deleted or never existed. Please try again.")
                 return
 
-            # Here we've found the message - it's up to you to decide what to do next!
-            # await message.channel.send(
-            #     f"I found this message:\n"
-            #     f"```{self.flagged_message.author.name}: {self.flagged_message.content}```\n"
-            #     "Please review the message and take appropriate action."
-            # )
             self.state = ModState.MESSAGE_IDENTIFIED
 
             await message.channel.send(
@@ -92,7 +84,6 @@ class ModReport:
 
             self.dm_channel = await message.author.create_dm()
             self.dm_message_author_channel = await self.flagged_message.author.create_dm()
-            print('self.dm_message author channel:', self.dm_message_author_channel)
 
             sent_message = await self.dm_channel.send(
                 f"I found this message:\n"
@@ -161,50 +152,38 @@ class ModReport:
 
         elif self.state == ModState.HARASSMENT_CHOSEN:
             if reaction == '1️⃣':
-                self.state = ModState.HARASSMENT_TAKE_ACTION
-                await self.handle_harassment_take_action_reaction()
+                users_ref = self.db.collection("users")
+                user_ref = users_ref.document(str(self.flagged_message.author.id))
+                user_doc = user_ref.get()
+                # Check if the document exists
+                flag_counts = 0
+                if user_doc.exists:
+                    flag_counts = user_doc.to_dict().get('flag_counts', 0)
+
+                await self.dm_channel.send(f"The user {self.flagged_message.author.name} has been previously flagged {flag_counts} times.")
+
+                # remove post
+                await self.dm_channel.send("Removing post...")
+                
+                action_message = ""
+                if flag_counts < 5:
+                    action_message = "Removed post. This moderation process is complete."
+                elif 5 <= flag_counts < 10:
+                    await self.dm_message_author_channel.send(f"You have been suspended for 3 days for the following message, and it has been removed from our platform. Please review the community guidelines.\n```{self.flagged_message.content}```")
+                    action_message = "Suspended user for 3 days and removed post. This moderation process is complete."
+                else:
+                    await self.dm_message_author_channel.send(f"You have been banned for the following message, and it has been removed from our platform. Please review the community guidelines.\n```{self.flagged_message.content}```")
+                    action_message = "Banned user and removed post. This moderation process is complete."
+
+                await self.flagged_message.delete()
+
+                await self.dm_channel.send(action_message)
+                self.state = ModState.REPORT_COMPLETE
+
             elif reaction == '2️⃣':
                 await self.dm_channel.send("No action taken. This moderation process is complete.")
                 self.state = ModState.REPORT_COMPLETE
             elif reaction == '3️⃣':
-                # cancel
-                await self.dm_channel.send("Canceled manual moderation.")
-                self.state = ModState.REPORT_COMPLETE
-            else:
-                # Invalid reaction, ignore it
-                return
-            
-        elif self.state == ModState.HARASSMENT_TAKE_ACTION:
-            if reaction == '1️⃣':
-                # remove post
-                await self.dm_channel.send("Removing post...")
-                await self.flagged_message.delete()
-                await self.dm_channel.send("Removed post. This moderation process is complete.")
-                self.state = ModState.REPORT_COMPLETE
-            elif reaction == '2️⃣':
-                user = self.flagged_message.author.name
-                # suspend user
-                # await self.flagged_message.channel.send(f"User {user} has been suspended for 3 days.")
-                await self.dm_message_author_channel.send(f"You have been suspended for 3 days for the following message, and it has been removed from our platform. Please review the community guidelines.\n```{self.flagged_message.content}```")
-                # remove post
-                await self.dm_channel.send("Removing post...")
-                await self.flagged_message.delete()
-
-                await self.dm_channel.send(f"Suspended user {user} for 3 days and removed post. This moderation process is complete.")
-                
-                self.state = ModState.REPORT_COMPLETE
-            elif reaction == '3️⃣':
-                user = self.flagged_message.author.name
-                # ban user
-                # await self.flagged_message.channel.send(f"User {user} has been banned.")
-                await self.dm_message_author_channel.send(f"You have been banned for the following message, and it has been removed from our platform. Please review the community guidelines.\n```{self.flagged_message.content}```")
-                # remove post
-                await self.dm_channel.send("Removing post...")
-                await self.flagged_message.delete()
-
-                await self.dm_channel.send(f"Banned user {user} and removed post. This moderation process is complete.")
-                self.state = ModState.REPORT_COMPLETE
-            elif reaction == '4️⃣':
                 # cancel
                 await self.dm_channel.send("Canceled manual moderation.")
                 self.state = ModState.REPORT_COMPLETE
@@ -367,10 +346,38 @@ class ModReport:
                 await self.dm_channel.send("No action taken. The moderation process is complete.")
                 self.state = ModState.REPORT_COMPLETE
             elif reaction == '2️⃣':
+                users_ref = self.db.collection("users")
+                user_ref = users_ref.document(str(self.flagged_message.author.id))
+                user_doc = user_ref.get()
+                # Check if the document exists
+                flag_counts = 0
+                if user_doc.exists:
+                    flag_counts = user_doc.to_dict().get('flag_counts', 0)
+
+                await self.dm_channel.send(f"The user {self.flagged_message.author.name} has been previously flagged {flag_counts} times.")
+
+                # remove post
+                await self.dm_channel.send("Removing post...")
+                
+                action_message = ""
+                if flag_counts < 5:
+                    action_message = "Removed post. This moderation process is complete."
+                elif 5 <= flag_counts < 10:
+                    await self.dm_message_author_channel.send(f"You have been suspended for 3 days for the following message, and it has been removed from our platform. Please review the community guidelines.\n```{self.flagged_message.content}```")
+                    action_message = "Suspended user for 3 days and removed post. This moderation process is complete."
+                else:
+                    await self.dm_message_author_channel.send(f"You have been banned for the following message, and it has been removed from our platform. Please review the community guidelines.\n```{self.flagged_message.content}```")
+                    action_message = "Banned user and removed post. This moderation process is complete."
+
+                await self.flagged_message.delete()
+
+                await self.dm_channel.send(action_message)
+                self.state = ModState.REPORT_COMPLETE
+            elif reaction == '3️⃣':
                 # ban user
-                # await self.flagged_message.channel.send(f"User {self.flagged_message.author.name} has been banned.")
                 await self.dm_message_author_channel.send(f"You have been banned for the following message, and it has been removed from our platform. Please review the community guidelines.\n```{self.flagged_message.content}```")
 
+                await self.dm_channel.send("Removing post...")
                 # removing post
                 await self.flagged_message.delete()
 
@@ -378,7 +385,7 @@ class ModReport:
                 # basically do nothing... just a simulation
                 await self.dm_channel.send("Removed post, banned user, and sent automatic report to law enforcement. The moderation process is complete.")
                 self.state = ModState.REPORT_COMPLETE
-            elif reaction == '3️⃣':
+            elif reaction == '4️⃣':
                 # cancel
                 await self.dm_channel.send("Canceled manual moderation.")
                 self.state = ModState.REPORT_COMPLETE
@@ -411,25 +418,7 @@ class ModReport:
                 "3️⃣ - Cancel",
                 3
             )
-        
-    async def handle_harassment_take_action_reaction(self):
-        # based on how many times the user has been flagged, choose an option
-        users_ref = self.db.collection("users")
-        user_ref = users_ref.document(str(self.flagged_message.author.id))
-        user_doc = user_ref.get()
-        # Check if the document exists
-        flag_counts = 0
-        if user_doc.exists:
-            flag_counts = user_doc.to_dict().get('flag_counts', 0)
 
-        await self.send_follow_up_question(
-                f"The user {self.flagged_message.author.name} has been previously flagged {flag_counts} times. Choose an option for action\n"
-                "1️⃣ - Less than 5 times -> Remove post\n"
-                "2️⃣ - Greater than 5 times -> Suspend user\n"
-                "3️⃣ - Greater than 10 times -> Ban user\n"
-                "4️⃣ - Cancel",
-                4
-            )
 
     # OFFENSIVE CONTENT FLOW --------------------------------------------------------------
     async def handle_offensive_content_reaction(self):
@@ -527,10 +516,11 @@ class ModReport:
         # Ask to remove post or send mental health resources if the enough veracity
         await self.send_follow_up_question(
                 "Please determine the authenticity of the post and react for one of the options:\n"
-                "1️⃣ - False Report -> No Action\n"
-                "2️⃣ - Credible Threat -> Remove post, ban user, and report to law enforcement\n"
-                "3️⃣ - Cancel",
-                3
+                "1️⃣ - False Report With No Harassment-> No Action\n"
+                "2️⃣ - False Report With Harassment -> Post removal, suspension, and/or ban\n"
+                "3️⃣ - Credible Threat -> Remove post, ban user, and report to law enforcement\n"
+                "4️⃣ - Cancel",
+                4
             )
         
     
